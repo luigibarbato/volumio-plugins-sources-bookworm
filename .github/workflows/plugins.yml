@@ -1,5 +1,5 @@
 # Builds the plugins a pull request changes, one zip per architecture, with the Volumio plugin SDK.
-# The gates report their findings in the run summary without failing the build (report-only).
+# A gate error fails the check; the findings are in the run summary.
 # Run it by hand to build every plugin.
 name: Plugins
 
@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: VolumioTeam/volumio-plugin-sdk
-          ref: v0.3.0
+          ref: v0.3.1
           path: sdk
       - id: pr
         if: github.event_name == 'pull_request'
@@ -51,8 +51,7 @@ jobs:
       fail-fast: false
       matrix:
         plugin: ${{ fromJSON(needs.changed.outputs.plugins) }}
-    uses: VolumioTeam/volumio-plugin-sdk/.github/workflows/build.yml@v0.3.0
+    uses: VolumioTeam/volumio-plugin-sdk/.github/workflows/build.yml@v0.3.1
     with:
       path: ${{ matrix.plugin }}
-      report-only: true
       artifact: ${{ matrix.plugin }}
