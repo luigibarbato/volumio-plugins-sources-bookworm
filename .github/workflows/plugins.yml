@@ -1,0 +1,58 @@
+# Builds the plugins a pull request changes, one zip per architecture, with the Volumio plugin SDK.
+# The gates report their findings in the run summary without failing the build (report-only).
+# Run it by hand to build every plugin.
+name: Plugins
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plugins-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changed:
+    runs-on: ubuntu-24.04
+    outputs:
+      plugins: ${{ steps.pr.outputs.plugins || steps.all.outputs.plugins }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: sources
+          fetch-depth: 0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: VolumioTeam/volumio-plugin-sdk
+          ref: v0.3.0
+          path: sdk
+      - id: pr
+        if: github.event_name == 'pull_request'
+        working-directory: sources
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          plugins=$(../sdk/scripts/changed-plugins.sh "$BASE" HEAD)
+          echo "plugins=$plugins" >> "$GITHUB_OUTPUT"
+      - id: all
+        if: github.event_name != 'pull_request'
+        working-directory: sources
+        run: |
+          plugins=$(../sdk/scripts/changed-plugins.sh all)
+          echo "plugins=$plugins" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: changed
+    if: needs.changed.outputs.plugins != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin: ${{ fromJSON(needs.changed.outputs.plugins) }}
+    uses: VolumioTeam/volumio-plugin-sdk/.github/workflows/build.yml@v0.3.0
+    with:
+      path: ${{ matrix.plugin }}
+      report-only: true
+      artifact: ${{ matrix.plugin }}
