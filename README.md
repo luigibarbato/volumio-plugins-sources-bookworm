@@ -75,7 +75,24 @@ Remove node_modules
 ```
 rm -Rf node_modules
 ```
-## 6. Send a PR to Github and submit from a BOOKWORM DEVICE!
+## 6. Check your plugin
+
+Volumio checks every plugin with the [Volumio plugin SDK](https://github.com/VolumioTeam/volumio-plugin-sdk). Run the same checks before you send your pull request, from the root of your clone, on your computer or on a Volumio device:
+
+```
+npx --package=@volumio/plugin-sdk volumio-plugin check your_plugin_folder
+```
+
+Each error comes with a `fix:` line, and an error blocks the pull request. Warnings and `todo` lines do not block. The most common errors:
+
+- `README is missing`: add a `README.md` that says what the plugin does and how to set it up.
+- `changelog must be string`: in `package.json`, `volumio_info.changelog` is one string, not a list.
+
+If you changed the dependencies in `package.json`, run `npm install` in your plugin folder and commit the `package-lock.json` it writes. The build installs with `npm ci`, which fails when the lockfile does not match `package.json`.
+
+The pull request also runs ShellCheck on your scripts and looks for secrets in your code. `check` runs these two only when `shellcheck` and `gitleaks` are installed, which they are not on a Volumio device.
+
+## 7. Send a PR to Github and submit from a BOOKWORM DEVICE!
 
 For Github
 ```
@@ -93,6 +110,6 @@ Your plugin is now in beta state, available in the store when "plugin test mode"
 
 It will be released as stable once checked by volumio team.
 
-## 7. Update your plugin
+## 8. Update your plugin
 
 If you want to update your plugin (to fix an issue, add a feature or EVEN minor typo correction...) you MUST change the version number in package.json, re-submit the plugin and send a new PULL REQUEST. Without new version number, the new plugin will be NOT available in the store!
